@@ -48,7 +48,10 @@
 ;; Depth-Changing
 
 (defn wrap
-  "
+  ;; This docstring could be better.
+  "Create a new branch with wrapper at loc with the node at loc as
+  it's child. wrapper must be a valid branch. 
+
   Example:
 
     (require
@@ -65,8 +68,7 @@
     (when-not (branch? wrapper)
       (throw (ex-info "Wrapper must be a branch"
                       {:given wrapper
-                       :expected
-                       `(~'(:zip/branch? (meta loc)) ~wrapper)})))
+                       :expected `(~'(:zip/branch? (meta loc)) ~wrapper)})))
     (zip/replace loc 
                  (-> (zipper wrapper)
                      (zip/append-child (zip/node loc))
@@ -81,7 +83,6 @@
     (require
      '[clojure.zip :as z]
      '[xylophone.zip :as x])
-
 
     (-> (x/seq-zip '(foo (bar baz) quux))
         (z/down)
@@ -108,7 +109,6 @@
     (require
      '[clojure.zip :as z]
      '[xylophone.zip :as x])
-
 
     (-> (x/seq-zip '(foo (bar baz) quux))
         (z/down)
@@ -180,6 +180,10 @@
   only child the parent of loc will be maintained.
 
   Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
 
     (-> (x/seq-zip '(foo (bar baz) quux))
         (z/down)
