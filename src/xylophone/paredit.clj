@@ -63,9 +63,10 @@
   (let [branch? (xip/branch-fn loc)
         zipper (xip/zipper-fn loc)]
     (when-not (branch? wrapper)
-      (throw (ex-info "Wrapper must be a branch" {:given wrapper
-                                                  :expected
-                                                  `(~'(:zip/branch? (meta loc)) `~wrapper)})))
+      (throw (ex-info "Wrapper must be a branch"
+                      {:given wrapper
+                       :expected
+                       `(~'(:zip/branch? (meta loc)) ~wrapper)})))
     (zip/replace loc 
                  (-> (zipper wrapper)
                      (zip/append-child (zip/node loc))
