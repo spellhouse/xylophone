@@ -2,46 +2,103 @@
   "Paredit operations in terms of zippers."
   (:refer-clojure :exclude [split])
   (:require
-   [clojure.zip :as zip]
-   [xylophone.zip :as xip]))
-
+   [clojure.zip :as z]
+   [xylophone.zip :as x]))
 
 ;; ---------------------------------------------------------------------
 ;; Deleting & Killing
 
 (defn forward-delete
-  "Remove the sibiling on the immediate right of loc."
+  "Remove the sibiling on the immediate right of loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo bar baz quux))
+        (z/down)
+        (z/right)
+        (forward-delete)
+        (z/root))
+    ;; => (foo bar quux)"
   [loc]
-  (if-let [loc (zip/right loc)]
-    (zip/remove loc)
+  (if-let [loc (z/right loc)]
+    (z/remove loc)
     loc))
+
 
 (defn forward-kill
-  "Remove all sibilings on the right of loc."
+  "Remove all sibilings on the right of loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo bar baz quux))
+        (z/down)
+        (forward-kill)
+        (z/root))
+
+    ;; => (foo)"
   [loc]
   (reduce
    (fn [loc _]
-     (zip/remove (zip/right loc)))
+     (z/remove (z/right loc)))
    loc
-   (zip/rights loc)))
+   (z/rights loc)))
+
 
 (defn backward-delete
-  "Remove the sibiling on the immediate left of loc."
+  "Remove the sibiling on the immediate left of loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo bar baz quux))
+        (z/down)
+        (z/rightmost)
+        (backward-delete)
+        (z/root))
+
+    ;; => (foo bar quux)"
   [loc]
-  (if-let [loc (zip/left loc)]
-    (zip/next (zip/remove loc))
+  (if-let [loc (z/left loc)]
+    (z/next (z/remove loc))
     loc))
 
+
+
 (defn backward-kill
-  "Remove all sibilings on the left of loc."
+  "Remove all sibilings on the left of loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo bar baz quux))
+        (z/down)
+        (z/rightmost)
+        (backward-kill)
+        (z/root))
+
+    ;; => (quux)"
   [loc]
   (reduce
    (fn [loc _]
-     (-> (zip/left loc)
-         (zip/remove)
-         (zip/next)))
+     (-> (z/left loc)
+         (z/remove)
+         (z/next)))
    loc
-   (zip/lefts loc)))
+   (z/lefts loc)))
 
 
 ;; ---------------------------------------------------------------------
@@ -63,16 +120,16 @@
         (z/root))
     ;; => (+ 3 (+ 1 2))"
   [loc wrapper]
-  (let [branch? (xip/branch-fn loc)
-        zipper (xip/zipper-fn loc)]
+  (let [branch? (x/branch-fn loc)
+        zipper (x/zipper-fn loc)]
     (when-not (branch? wrapper)
       (throw (ex-info "Wrapper must be a branch"
                       {:given wrapper
                        :expected `(~'(:zip/branch? (meta loc)) ~wrapper)})))
-    (zip/replace loc 
-                 (-> (zipper wrapper)
-                     (zip/append-child (zip/node loc))
-                     (zip/root)))))
+    (z/replace loc 
+               (-> (zipper wrapper)
+                   (z/append-child (z/node loc))
+                   (z/root)))))
 
 (defn splice-children
   "Given a branch inject it's children into it's parent node at the
@@ -92,14 +149,14 @@
         (z/root))
     ;; => (foo bar baz quux)"
   [loc]
-  (if (xip/root? loc)
+  (if (x/root? loc)
     loc
     (let [loc (reduce
                (fn [l c]
-                 (zip/insert-left l c))
+                 (z/insert-left l c))
                loc
-               (zip/children loc))]
-      (zip/remove loc))))
+               (z/children loc))]
+      (z/remove loc))))
 
 (defn splice
   "Like splice-children but operates on the parent of loc. This is a
@@ -119,24 +176,77 @@
         (z/root))
     ;; => (foo bar baz quux)"
   [loc]
-  (if (xip/root? loc)
+  (if (x/root? loc)
     loc
-    (-> (zip/up loc)
+    (-> (z/up loc)
         (splice-children)
-        (xip/backward (count (zip/rights loc))))))
+        (x/backward (count (z/rights loc))))))
 
 (defn raise
-  "Remove all sibilings to the left and right of loc and splice loc."
+  "Remove all sibilings to the left and right of loc and splice loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo (bar baz quux)))
+        (z/down)
+        (z/right)
+        (z/down)
+        (z/right)
+        (raise)
+        (z/root))
+    ;; => (foo baz)"
   [loc]
   (-> loc backward-kill forward-kill splice))
 
+
+(-> (x/seq-zip '(foo (bar baz quux)))
+    (z/down)
+    (z/right)
+    (z/down)
+    (z/right)
+    (raise)
+    (z/root))
+
 (defn splice-killing-forward
-  "Remove all sibilings to the right of loc and splice loc."
+  "Remove all sibilings to the right of loc and splice loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo (bar baz) quux))
+        (z/down)
+        (z/right)
+        (z/down)
+        (splice-killing-forward)
+        (z/root))
+    ;; => (foo bar quux)"
   [loc]
   (-> loc forward-kill splice))
 
 (defn splice-killing-backward
-  "Remove all sibilings to the left of loc and splice loc."
+  "Remove all sibilings to the left of loc and splice loc.
+
+  Example:
+
+    (require
+     '[clojure.zip :as z]
+     '[xylophone.zip :as x])
+
+    (-> (x/seq-zip '(foo (bar baz) quux))
+        (z/down)
+        (z/right)
+        (z/down)
+        (z/right)
+        (splice-killing-backward)
+        (z/root))
+    ;; => (foo baz quux)"
   [loc]
   (-> loc backward-kill splice))
 
@@ -166,10 +276,10 @@
         (z/root))
     ;; => (foo (bar baz quux))"
   [loc]
-  (if-let [ploc (zip/up loc)]
-    (if-let [prloc (zip/right ploc)]
-      (-> (zip/remove prloc)
-          (zip/insert-right (zip/node prloc)))
+  (if-let [ploc (z/up loc)]
+    (if-let [prloc (z/right ploc)]
+      (-> (z/remove prloc)
+          (z/insert-right (z/node prloc)))
       loc)
     loc))
 
@@ -196,17 +306,17 @@
 
     ;; => (foo (bar) baz quux)"
   [loc]
-  (if (zip/up loc)
-    (if (xip/only-child? loc)
-      (-> (zip/remove loc)
-          (zip/insert-right (zip/node loc)))
-      (let [idx (xip/index loc)
-            rloc (zip/rightmost loc)]
-        (-> (zip/remove rloc)
-            (zip/up)
-            (zip/insert-right (zip/node rloc))
-            (zip/down)
-            (xip/forward idx))))
+  (if (z/up loc)
+    (if (x/only-child? loc)
+      (-> (z/remove loc)
+          (z/insert-right (z/node loc)))
+      (let [idx (x/index loc)
+            rloc (z/rightmost loc)]
+        (-> (z/remove rloc)
+            (z/up)
+            (z/insert-right (z/node rloc))
+            (z/down)
+            (x/forward idx))))
     loc))
 
 
@@ -231,13 +341,13 @@
         (z/root))
     ;; => ((foo bar baz) quux)"
   [loc]
-  (if-let [ploc (zip/up loc)]
-    (if-let [plloc (zip/left ploc)]
-      (-> (zip/remove plloc)
-          (zip/next)
-          (zip/down)
-          (zip/insert-left (zip/node plloc))
-          (xip/forward (xip/index loc)))
+  (if-let [ploc (z/up loc)]
+    (if-let [plloc (z/left ploc)]
+      (-> (z/remove plloc)
+          (z/next)
+          (z/down)
+          (z/insert-left (z/node plloc))
+          (x/forward (x/index loc)))
       loc)
     loc))
 
@@ -255,26 +365,26 @@
      '[clojure.zip :as z]
      '[xylophone.zip :as x])
 
-    (-> (xip/seq-zip '(foo (bar baz) quux))
-        (zip/down)
-        (zip/right)
-        (zip/down)
-        (zip/right)
+    (-> (x/seq-zip '(foo (bar baz) quux))
+        (z/down)
+        (z/right)
+        (z/down)
+        (z/right)
         (backward-barf)
-        (zip/root))
+        (z/root))
 
     ;; => (foo bar (baz) quux)"
   [loc]
-  (if (zip/up loc)
-    (if (xip/only-child? loc)
-      (-> (zip/remove loc)
-          (zip/insert-left (zip/node loc)))
-      (let [idx (xip/index loc)
-            loc (zip/leftmost loc)]
-        (-> (zip/remove loc)
-            (zip/insert-left (zip/node loc))
-            (zip/down)
-            (xip/forward (dec idx)))))
+  (if (z/up loc)
+    (if (x/only-child? loc)
+      (-> (z/remove loc)
+          (z/insert-left (z/node loc)))
+      (let [idx (x/index loc)
+            loc (z/leftmost loc)]
+        (-> (z/remove loc)
+            (z/insert-left (z/node loc))
+            (z/down)
+            (x/forward (dec idx)))))
     loc))
 
 
@@ -300,23 +410,23 @@
 
     ;; => (foo (bar) (baz) quux)"
   [loc]
-  (assert (xip/child? loc) "Cannot split at top")
-  (let [b (-> loc zip/up xip/empty xip/make-root)
-        l (zip/node
+  (assert (x/child? loc) "Cannot split at top")
+  (let [b (-> loc z/up x/empty x/make-root)
+        l (z/node
            (reduce
             (fn [loc child]
-              (zip/append-child loc child))
+              (z/append-child loc child))
             b
-            (zip/lefts loc)))
-        r (zip/node
+            (z/lefts loc)))
+        r (z/node
            (reduce
             (fn [loc child]
-              (zip/append-child loc child))
-            (zip/append-child b (zip/node loc))
-            (zip/rights loc)))]
+              (z/append-child loc child))
+            (z/append-child b (z/node loc))
+            (z/rights loc)))]
     (-> loc
-        (zip/up)
-        (zip/insert-left l)
-        (zip/insert-right r)
-        (zip/remove)
-        (zip/next))))
+        (z/up)
+        (z/insert-left l)
+        (z/insert-right r)
+        (z/remove)
+        (z/next))))
