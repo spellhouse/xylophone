@@ -76,7 +76,8 @@
 
 (defn splice-children
   "Given a branch inject it's children into it's parent node at the
-  loc's position and discard the loc.
+  loc's position and discard the loc. This is a no-op if called from
+  the root node.
 
   Example:
 
@@ -87,7 +88,7 @@
     (-> (x/seq-zip '(foo (bar baz) quux))
         (z/down)
         (z/right)
-        (splice)
+        (splice-children)
         (z/root))
     ;; => (foo bar baz quux)"
   [loc]
@@ -101,8 +102,8 @@
       (zip/remove loc))))
 
 (defn splice
-  "Given a branch inject it's children into it's parent node at the
-  loc's position and discard the loc.
+  "Like splice-children but operates on the parent of loc. This is a
+  no-op if called on the root node. 
 
   Example:
 
@@ -113,6 +114,7 @@
     (-> (x/seq-zip '(foo (bar baz) quux))
         (z/down)
         (z/right)
+        (z/down)
         (splice)
         (z/root))
     ;; => (foo bar baz quux)"
