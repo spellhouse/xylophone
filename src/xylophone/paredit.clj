@@ -28,7 +28,6 @@
     (z/remove loc)
     loc))
 
-
 (defn forward-kill
   "Remove all sibilings on the right of loc.
 
@@ -51,7 +50,6 @@
    loc
    (z/rights loc)))
 
-
 (defn backward-delete
   "Remove the sibiling on the immediate left of loc.
 
@@ -72,8 +70,6 @@
   (if-let [loc (z/left loc)]
     (z/next (z/remove loc))
     loc))
-
-
 
 (defn backward-kill
   "Remove all sibilings on the left of loc.
@@ -202,15 +198,6 @@
   [loc]
   (-> loc backward-kill forward-kill splice))
 
-
-(-> (x/seq-zip '(foo (bar baz quux)))
-    (z/down)
-    (z/right)
-    (z/down)
-    (z/right)
-    (raise)
-    (z/root))
-
 (defn splice-killing-forward
   "Remove all sibilings to the right of loc and splice loc.
 
@@ -283,7 +270,6 @@
       loc)
     loc))
 
-
 (defn forward-barf
   "Move the rightmost sibling of loc to immediate right of the parent
   of loc. This is a no-op if loc is the root location.
@@ -319,7 +305,6 @@
             (x/forward idx))))
     loc))
 
-
 (defn backward-slurp
   "Move the node to immediate left of the parent of loc into the
   leftmost position of loc. This is a no-op if loc is the root node or
@@ -350,7 +335,6 @@
           (x/forward (x/index loc)))
       loc)
     loc))
-
 
 (defn backward-barf
   "Move the rightmost sibling of loc to immediate right of the parent
