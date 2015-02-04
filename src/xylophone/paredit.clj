@@ -292,7 +292,8 @@
 
     ;; => (foo (bar) baz quux)"
   [loc]
-  (if (z/up loc)
+  (if (x/root? loc)
+    loc
     (if (x/only-child? loc)
       (-> (z/remove loc)
           (z/insert-right (z/node loc)))
@@ -302,8 +303,7 @@
             (z/up)
             (z/insert-right (z/node rloc))
             (z/down)
-            (x/forward idx))))
-    loc))
+            (x/forward idx))))))
 
 (defn backward-slurp
   "Move the node to immediate left of the parent of loc into the
@@ -359,7 +359,8 @@
 
     ;; => (foo bar (baz) quux)"
   [loc]
-  (if (z/up loc)
+  (if (x/root? loc)
+    loc
     (if (x/only-child? loc)
       (-> (z/remove loc)
           (z/insert-left (z/node loc)))
@@ -368,8 +369,7 @@
         (-> (z/remove loc)
             (z/insert-left (z/node loc))
             (z/down)
-            (x/forward (dec idx)))))
-    loc))
+            (x/forward (dec idx)))))))
 
 
 ;; ---------------------------------------------------------------------
