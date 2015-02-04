@@ -308,7 +308,7 @@
 (defn backward-slurp
   "Move the node to immediate left of the parent of loc into the
   leftmost position of loc. This is a no-op if loc is the root node or
-  no the part of loc has no sibling to the left.
+  the parent of loc has no sibling to the left.
 
   Maintains loc position.
  
